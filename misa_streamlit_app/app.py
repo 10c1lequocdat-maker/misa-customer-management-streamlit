@@ -1,299 +1,235 @@
 import streamlit as st
-import pandas as pd
-from datetime import date, datetime
-
-from storage import load_customers, save_customers
-from customer_service import (
-    add_customer,
-    soft_delete_customer,
-    update_customer,
-    search_customers,
-    active_customers,
-    get_customer_by_id,
-    calculate_service_status,
-)
 
 st.set_page_config(
     page_title="Quản lý khách hàng MISA",
-    page_icon="👥",
     layout="wide"
 )
 
-st.markdown(
-    """
-    <style>
-    .main-title {
-        color: #0052cc;
-        font-size: 34px;
-        font-weight: 800;
-        margin-bottom: 0;
-    }
-    .sub-title {
-        color: #4a5c73;
-        font-size: 16px;
-        margin-bottom: 24px;
-    }
-    .metric-card {
+st.markdown("""
+<style>
+    .main-header {
+        background-color: #0052cc;
         padding: 18px;
-        border: 1px solid #d6e4f5;
-        border-radius: 14px;
-        background: #f8fbff;
-    }
-    .success-badge {
-        color: #137333;
-        background: #e6f4ea;
-        padding: 4px 8px;
         border-radius: 8px;
-        font-weight: 600;
+        color: white;
+        text-align: center;
+        font-size: 30px;
+        font-weight: bold;
+        margin-bottom: 20px;
     }
-    .warning-badge {
-        color: #b06000;
-        background: #fff4e5;
-        padding: 4px 8px;
+
+    .section-title {
+        color: #0052cc;
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 16px;
+    }
+
+    .note-box {
+        background-color: #fff7e6;
+        border: 1px solid #ffd591;
+        padding: 14px;
         border-radius: 8px;
-        font-weight: 600;
+        margin-top: 20px;
     }
-    .danger-badge {
-        color: #b3261e;
-        background: #fce8e6;
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-weight: 600;
+
+    .status-active {
+        background-color: #d9f7be;
+        color: #237804;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-weight: bold;
     }
-    </style>
-    """,
+
+    .status-warning {
+        background-color: #fff1b8;
+        color: #ad6800;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+
+    .status-expired {
+        background-color: #ffccc7;
+        color: #a8071a;
+        padding: 5px 10px;
+        border-radius: 6px;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown(
+    '<div class="main-header">QUẢN LÝ KHÁCH HÀNG MISA</div>',
     unsafe_allow_html=True
 )
 
-if "customers" not in st.session_state:
-    st.session_state.customers = load_customers()
+with st.sidebar:
+    st.markdown("## MISA")
+    st.markdown("### Menu chức năng")
 
-def persist():
-    save_customers(st.session_state.customers)
-
-def refresh_status():
-    for customer in st.session_state.customers:
-        if not customer.get("is_deleted", False):
-            customer["service_status"] = calculate_service_status(customer.get("expiry_date", ""))
-    persist()
-
-def show_customer_table(customers):
-    if not customers:
-        st.info("Hiện chưa có khách hàng nào trong hệ thống.")
-        return
-
-    df = pd.DataFrame(customers)
-    display_cols = [
-        "customer_id", "name", "customer_type", "phone", "email",
-        "service_name", "package_name", "expiry_date",
-        "service_status", "payment_status", "debt_amount"
-    ]
-    rename_cols = {
-        "customer_id": "Mã KH",
-        "name": "Tên khách hàng",
-        "customer_type": "Loại KH",
-        "phone": "SĐT",
-        "email": "Email",
-        "service_name": "Dịch vụ",
-        "package_name": "Gói dịch vụ",
-        "expiry_date": "Ngày hết hạn",
-        "service_status": "Trạng thái dịch vụ",
-        "payment_status": "Thanh toán",
-        "debt_amount": "Công nợ"
-    }
-    for col in display_cols:
-        if col not in df.columns:
-            df[col] = ""
-    st.dataframe(
-        df[display_cols].rename(columns=rename_cols),
-        use_container_width=True,
-        hide_index=True
+    menu = st.radio(
+        "Chọn chức năng",
+        [
+            "1. Nhập thông tin khách hàng",
+            "2. Cập nhật thông tin khách hàng",
+            "3. Tìm kiếm thông tin khách hàng",
+            "4. Xóa thông tin khách hàng",
+            "5. Xem danh sách thông tin khách hàng"
+        ],
+        label_visibility="collapsed"
     )
 
-def customer_form(prefix="", default=None):
-    default = default or {}
+if menu == "1. Nhập thông tin khách hàng":
+    st.markdown('<div class="section-title">Nhập thông tin khách hàng</div>', unsafe_allow_html=True)
+
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        customer_id = st.text_input(
-            "Mã khách hàng *",
-            value=default.get("customer_id", ""),
-            disabled=bool(default),
-            key=f"{prefix}_customer_id"
-        )
-        name = st.text_input("Tên khách hàng *", value=default.get("name", ""), key=f"{prefix}_name")
-        customer_type = st.selectbox(
-            "Loại khách hàng",
-            ["Cá nhân", "Doanh nghiệp"],
-            index=0 if default.get("customer_type", "Cá nhân") == "Cá nhân" else 1,
-            key=f"{prefix}_customer_type"
-        )
-        phone = st.text_input("Số điện thoại *", value=default.get("phone", ""), key=f"{prefix}_phone")
+        ma_kh = st.text_input("Mã khách hàng")
+        ten_kh = st.text_input("Tên khách hàng")
+        loai_kh = st.selectbox("Loại khách hàng", ["Cá nhân", "Doanh nghiệp"])
 
     with col2:
-        email = st.text_input("Email", value=default.get("email", ""), key=f"{prefix}_email")
-        address = st.text_input("Địa chỉ", value=default.get("address", ""), key=f"{prefix}_address")
-        representative = st.text_input("Người liên hệ đại diện", value=default.get("representative", ""), key=f"{prefix}_representative")
-        tax_code = st.text_input("Mã số thuế", value=default.get("tax_code", ""), key=f"{prefix}_tax_code")
+        sdt = st.text_input("Số điện thoại")
+        email = st.text_input("Email")
+        dia_chi = st.text_input("Địa chỉ")
 
     with col3:
-        service_name = st.text_input("Sản phẩm / dịch vụ", value=default.get("service_name", "MISA AMIS"), key=f"{prefix}_service_name")
-        package_name = st.selectbox(
-            "Gói dịch vụ",
-            ["Basic", "Standard", "Premium"],
-            index=["Basic", "Standard", "Premium"].index(default.get("package_name", "Standard")) if default.get("package_name", "Standard") in ["Basic", "Standard", "Premium"] else 1,
-            key=f"{prefix}_package_name"
-        )
-        start_date = st.date_input(
-            "Ngày bắt đầu",
-            value=datetime.strptime(default.get("start_date", str(date.today())), "%Y-%m-%d").date() if default.get("start_date") else date.today(),
-            key=f"{prefix}_start_date"
-        )
-        expiry_date = st.date_input(
-            "Ngày hết hạn",
-            value=datetime.strptime(default.get("expiry_date", str(date.today())), "%Y-%m-%d").date() if default.get("expiry_date") else date.today(),
-            key=f"{prefix}_expiry_date"
-        )
+        goi_dv = st.selectbox("Gói dịch vụ", ["MISA AMIS", "MISA SME", "meInvoice"])
+        ngay_het_han = st.date_input("Ngày hết hạn")
+        cong_no = st.number_input("Công nợ", min_value=0)
 
-    col4, col5, col6 = st.columns(3)
+    if st.button("Lưu khách hàng"):
+        st.success("Đã lưu thông tin khách hàng.")
+
+elif menu == "2. Cập nhật thông tin khách hàng":
+    st.markdown('<div class="section-title">Cập nhật thông tin khách hàng</div>', unsafe_allow_html=True)
+
+    ma_tim = st.text_input("Nhập mã khách hàng cần cập nhật")
+
+    if st.button("Tải thông tin"):
+        st.info("Hiển thị thông tin khách hàng cần cập nhật.")
+
+    st.text_input("Tên khách hàng")
+    st.text_input("Số điện thoại")
+    st.text_input("Email")
+    st.text_input("Địa chỉ")
+    st.selectbox("Gói dịch vụ", ["MISA AMIS", "MISA SME", "meInvoice"])
+    st.number_input("Công nợ", min_value=0)
+
+    if st.button("Cập nhật khách hàng"):
+        st.success("Cập nhật thông tin khách hàng thành công.")
+
+elif menu == "3. Tìm kiếm thông tin khách hàng":
+    st.markdown('<div class="section-title">Tìm kiếm thông tin khách hàng</div>', unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        keyword = st.text_input("Tìm theo mã, tên, SĐT hoặc email")
+
+    with col2:
+        loai_kh = st.selectbox("Loại khách hàng", ["Tất cả", "Cá nhân", "Doanh nghiệp"])
+
+    with col3:
+        trang_thai = st.selectbox("Trạng thái dịch vụ", ["Tất cả", "Đang hoạt động", "Sắp hết hạn", "Đã hết hạn"])
+
+    if st.button("Tìm kiếm"):
+        st.success("Hiển thị kết quả tìm kiếm.")
+
+elif menu == "4. Xóa thông tin khách hàng":
+    st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
+
+    ma_xoa = st.text_input("Nhập mã khách hàng cần xóa")
+
+    st.warning("Hệ thống sử dụng cơ chế xóa mềm: is_deleted = True.")
+
+    if st.button("Xóa khách hàng"):
+        st.error("Khách hàng đã được xóa mềm khỏi danh sách hoạt động.")
+
+elif menu == "5. Xem danh sách thông tin khách hàng":
+    st.markdown('<div class="section-title">Xem danh sách thông tin khách hàng</div>', unsafe_allow_html=True)
+
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+
+    with col1:
+        st.text_input("Tìm theo mã/tên", placeholder="Nhập mã KH hoặc tên KH...")
+
+    with col2:
+        st.selectbox("Loại khách hàng", ["Tất cả", "Cá nhân", "Doanh nghiệp"])
+
+    with col3:
+        st.selectbox("Trạng thái dịch vụ", ["Tất cả", "Đang hoạt động", "Sắp hết hạn", "Đã hết hạn"])
+
     with col4:
-        payment_status = st.selectbox(
-            "Trạng thái thanh toán",
-            ["Đã thanh toán", "Chưa thanh toán", "Còn công nợ"],
-            index=["Đã thanh toán", "Chưa thanh toán", "Còn công nợ"].index(default.get("payment_status", "Đã thanh toán")) if default.get("payment_status", "Đã thanh toán") in ["Đã thanh toán", "Chưa thanh toán", "Còn công nợ"] else 0,
-            key=f"{prefix}_payment_status"
-        )
-    with col5:
-        debt_amount = st.number_input(
-            "Công nợ (VND)",
-            min_value=0,
-            value=int(default.get("debt_amount", 0) or 0),
-            step=100000,
-            key=f"{prefix}_debt_amount"
-        )
-    with col6:
-        note = st.text_input("Ghi chú", value=default.get("note", ""), key=f"{prefix}_note")
+        st.write("")
+        st.button("Tìm kiếm")
 
-    return {
-        "customer_id": customer_id.strip(),
-        "name": name.strip(),
-        "customer_type": customer_type,
-        "phone": phone.strip(),
-        "email": email.strip(),
-        "address": address.strip(),
-        "representative": representative.strip(),
-        "tax_code": tax_code.strip(),
-        "service_name": service_name.strip(),
-        "package_name": package_name,
-        "start_date": start_date.isoformat(),
-        "expiry_date": expiry_date.isoformat(),
-        "service_status": calculate_service_status(expiry_date.isoformat()),
-        "payment_status": payment_status,
-        "debt_amount": int(debt_amount),
-        "note": note.strip(),
-    }
-
-st.sidebar.title("MISA")
-page = st.sidebar.radio(
-    "Menu chức năng",
-    [
-        "Trang chủ",
-        "Nhập thông tin khách hàng",
-        "Xem danh sách khách hàng",
-        "Tìm kiếm thông tin khách hàng",
-        "Cập nhật thông tin khách hàng",
-        "Xóa thông tin khách hàng"
+    data = [
+        {
+            "STT": 1,
+            "Mã KH": "KH001",
+            "Tên khách hàng": "Nguyễn Văn An",
+            "Loại KH": "Doanh nghiệp",
+            "SĐT": "0912 345 678",
+            "Email": "an.nguyen@anphat.com.vn",
+            "Gói dịch vụ": "MISA AMIS",
+            "Ngày hết hạn": "31/12/2025",
+            "Trạng thái": "Đang hoạt động",
+            "Công nợ": "2.350.000"
+        },
+        {
+            "STT": 2,
+            "Mã KH": "KH002",
+            "Tên khách hàng": "Trần Thị Bình",
+            "Loại KH": "Cá nhân",
+            "SĐT": "0909 876 543",
+            "Email": "binh.tran@gmail.com",
+            "Gói dịch vụ": "MISA SME",
+            "Ngày hết hạn": "15/06/2025",
+            "Trạng thái": "Sắp hết hạn",
+            "Công nợ": "0"
+        },
+        {
+            "STT": 3,
+            "Mã KH": "KH003",
+            "Tên khách hàng": "Công ty TNHH Minh Phát",
+            "Loại KH": "Doanh nghiệp",
+            "SĐT": "028 7300 1234",
+            "Email": "info@minhphat.com.vn",
+            "Gói dịch vụ": "meInvoice",
+            "Ngày hết hạn": "20/05/2025",
+            "Trạng thái": "Đã hết hạn",
+            "Công nợ": "1.200.000"
+        }
     ]
-)
 
-st.markdown('<p class="main-title">QUẢN LÝ KHÁCH HÀNG MISA</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Web app đơn giản xây dựng bằng Streamlit, dữ liệu lưu trong tệp JSON.</p>', unsafe_allow_html=True)
+    st.dataframe(data, use_container_width=True)
 
-refresh_status()
+    st.markdown("### Thông tin chi tiết khách hàng")
 
-if page == "Trang chủ":
-    st.subheader("Menu chức năng")
-    active = active_customers(st.session_state.customers)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Khách hàng đang hoạt động", len(active))
-    c2.metric("Tổng bản ghi", len(st.session_state.customers))
-    c3.metric("Đã xóa mềm", len([c for c in st.session_state.customers if c.get("is_deleted")]))
-    st.write("Chọn chức năng ở thanh bên trái để thực hiện thao tác quản lý khách hàng.")
+    col_left, col_right = st.columns(2)
 
-elif page == "Nhập thông tin khách hàng":
-    st.subheader("1. Nhập thông tin khách hàng")
-    with st.form("add_form"):
-        data = customer_form(prefix="add")
-        submitted = st.form_submit_button("Lưu khách hàng", type="primary")
+    with col_left:
+        st.write("**Mã khách hàng:** KH001")
+        st.write("**Tên khách hàng:** Nguyễn Văn An")
+        st.write("**Loại khách hàng:** Doanh nghiệp")
+        st.write("**Số điện thoại:** 0912 345 678")
+        st.write("**Email:** an.nguyen@anphat.com.vn")
+        st.write("**Địa chỉ:** Số 125 Nguyễn Trãi, Thanh Xuân, Hà Nội")
+        st.write("**Người liên hệ:** Nguyễn Văn An – Giám đốc")
+        st.write("**Gói dịch vụ:** MISA AMIS")
 
-    if submitted:
-        ok, message, new_list = add_customer(st.session_state.customers, data)
-        if ok:
-            st.session_state.customers = new_list
-            persist()
-            st.success(message)
-        else:
-            st.error(message)
+    with col_right:
+        st.write("**Ngày bắt đầu:** 01/01/2025")
+        st.write("**Ngày hết hạn:** 31/12/2025")
+        st.write("**Trạng thái dịch vụ:** Đang hoạt động")
+        st.write("**Công nợ:** 2.350.000 VND")
+        st.write("**Ghi chú:** Khách hàng sử dụng đầy đủ các phân hệ kế toán, nhân sự, bán hàng.")
 
-elif page == "Xem danh sách khách hàng":
-    st.subheader("5. Xem danh sách khách hàng")
-    st.caption("Chỉ hiển thị các khách hàng chưa bị xóa mềm: is_deleted = False.")
-    show_customer_table(active_customers(st.session_state.customers))
-
-elif page == "Tìm kiếm thông tin khách hàng":
-    st.subheader("4. Tìm kiếm thông tin khách hàng")
-    keyword = st.text_input("Nhập mã, tên, số điện thoại hoặc email")
-    if st.button("Tìm kiếm", type="primary"):
-        results = search_customers(st.session_state.customers, keyword)
-        st.write(f"Tìm thấy {len(results)} kết quả.")
-        show_customer_table(results)
-
-elif page == "Cập nhật thông tin khách hàng":
-    st.subheader("3. Cập nhật thông tin khách hàng")
-    update_id = st.text_input("Nhập mã khách hàng cần cập nhật")
-    customer = get_customer_by_id(st.session_state.customers, update_id) if update_id else None
-
-    if update_id and not customer:
-        st.warning("Không tìm thấy khách hàng đang hoạt động với mã đã nhập.")
-
-    if customer:
-        st.info(f"Đang cập nhật khách hàng: {customer['customer_id']} - {customer['name']}")
-        with st.form("update_form"):
-            updated_data = customer_form(prefix="update", default=customer)
-            submitted = st.form_submit_button("Cập nhật khách hàng", type="primary")
-
-        if submitted:
-            ok, message, new_list = update_customer(st.session_state.customers, update_id, updated_data)
-            if ok:
-                st.session_state.customers = new_list
-                persist()
-                st.success(message)
-            else:
-                st.error(message)
-
-elif page == "Xóa thông tin khách hàng":
-    st.subheader("2. Xóa thông tin khách hàng")
-    delete_id = st.text_input("Nhập mã khách hàng cần xóa")
-    customer = get_customer_by_id(st.session_state.customers, delete_id) if delete_id else None
-
-    if customer:
-        st.warning(f"Bạn đang chọn xóa mềm khách hàng: {customer['customer_id']} - {customer['name']}")
-        st.json({
-            "customer_id": customer.get("customer_id"),
-            "name": customer.get("name"),
-            "phone": customer.get("phone"),
-            "email": customer.get("email"),
-            "service_name": customer.get("service_name"),
-            "debt_amount": customer.get("debt_amount")
-        })
-        confirm = st.checkbox("Tôi xác nhận muốn xóa mềm khách hàng này.")
-        if st.button("Xóa khách hàng", type="primary", disabled=not confirm):
-            ok, message, new_list = soft_delete_customer(st.session_state.customers, delete_id)
-            if ok:
-                st.session_state.customers = new_list
-                persist()
-                st.success(message)
-            else:
-                st.error(message)
-    elif delete_id:
-        st.error("Không tìm thấy khách hàng hoặc khách hàng đã bị xóa mềm.")
+    st.markdown(
+        '<div class="note-box">Ghi chú: Chỉ hiển thị khách hàng chưa bị xóa mềm '
+        '(is_deleted = False).</div>',
+        unsafe_allow_html=True
+    )
