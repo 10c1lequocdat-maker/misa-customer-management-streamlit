@@ -709,8 +709,6 @@ elif menu == "Tìm kiếm thông tin khách hàng":
 
 elif menu == "Xóa thông tin khách hàng":
     st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
-    st.markdown("<div class='danger-note'>Hệ thống sử dụng xóa mềm: bản ghi không bị xóa vật lý, chỉ cập nhật is_deleted = True và ghi deleted_at.</div>", unsafe_allow_html=True)
-
     active = active_customers(customers)
     if not active:
         st.warning("Không có khách hàng đang hoạt động để xóa.")
@@ -724,7 +722,7 @@ elif menu == "Xóa thông tin khách hàng":
             balance = float(target.get("balance", 0) or 0)
             if balance != 0:
                 st.error(
-                    f"Không thể xóa hồ sơ. Khách hàng hiện đang có số dư công nợ là {balance:,.0f} VND. "
+                    f"Không thể xóa hồ sơ. Khách hàng hiện đang có số dư/công nợ là {balance:,.0f} VND. "
                     "Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa."
                 )
             else:
