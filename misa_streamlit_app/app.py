@@ -788,9 +788,3 @@ elif menu == "Xem danh sách thông tin khách hàng":
         chosen_customer = find_customer_by_id(filtered, chosen_id)
         if chosen_customer:
             render_customer_detail(chosen_customer)
-
-    st.markdown(
-        "<div class='small-note'>Ghi chú: Chỉ hiển thị khách hàng chưa bị xóa mềm "
-        ". Các bản ghi đã xóa vẫn được giữ trong file customers.json để phục vụ kiểm toán hoặc khôi phục.</div>",
-        unsafe_allow_html=True,
-    )
