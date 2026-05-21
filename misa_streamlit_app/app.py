@@ -654,7 +654,7 @@ elif menu == "Tìm kiếm thông tin khách hàng":
         unsafe_allow_html=True
     )
 
-    f1, f2, f3 = st.columns([2, 1, 1])
+    f1, f2, f3 = st.columns([3, 1, 1])
 
     with f1:
         keyword = st.text_input(
@@ -671,11 +671,14 @@ elif menu == "Tìm kiếm thông tin khách hàng":
     if st.button("Tìm kiếm", type="primary"):
         key = normalize_keyword(keyword)
         phone_key = digits_only(keyword)
-        results: List[Dict[str, Any]] = []
+
+        keyword_results: List[Dict[str, Any]] = []
+        final_results: List[Dict[str, Any]] = []
 
         if not key and not phone_key:
             st.warning("Vui lòng nhập từ khóa tìm kiếm.")
         else:
+            # BƯỚC 1: Tìm kiếm theo từ khóa trước
             for c in customers:
                 c2 = enrich_customer(c)
 
@@ -683,12 +686,7 @@ elif menu == "Tìm kiếm thông tin khách hàng":
                 if not include_deleted and c2.get("is_deleted"):
                     continue
 
-                # Lọc theo trạng thái dịch vụ
-                if status_filter != "Tất cả" and c2.get("service_status") != status_filter:
-                    continue
-
-                # Tự động tìm trên mã KH, tên KH, email và số điện thoại
-                matched = (
+                matched_keyword = (
                     key in normalize_keyword(c2.get("customer_id", ""))
                     or key in normalize_keyword(c2.get("customer_name", ""))
                     or key in normalize_keyword(c2.get("email", ""))
@@ -698,29 +696,46 @@ elif menu == "Tìm kiếm thông tin khách hàng":
                     )
                 )
 
-                if matched:
-                    results.append(c2)
+                if matched_keyword:
+                    keyword_results.append(c2)
 
-            st.markdown(f"#### Kết quả tìm kiếm: {len(results)} bản ghi")
+            # BƯỚC 2: Nếu từ khóa không tìm thấy thì báo luôn
+            if not keyword_results:
+                st.info("Không tìm thấy khách hàng phù hợp với từ khóa đã nhập.")
 
-            if results:
-                st.dataframe(
-                    customers_to_df(results),
-                    use_container_width=True,
-                    hide_index=True
-                )
-
-                chosen = st.selectbox(
-                    "Xem chi tiết kết quả",
-                    [f"{c['customer_id']} - {c['customer_name']}" for c in results]
-                )
-
-                chosen_id = chosen.split(" - ")[0]
-                render_customer_detail(
-                    find_customer_by_id(results, chosen_id) or results[0]
-                )
             else:
-                st.info("Không tìm thấy khách hàng phù hợp.")
+                # BƯỚC 3: Sau khi đã tìm thấy theo từ khóa, mới lọc theo trạng thái
+                for c in keyword_results:
+                    if status_filter == "Tất cả" or c.get("service_status") == status_filter:
+                        final_results.append(c)
+
+                # BƯỚC 4: Nếu có từ khóa nhưng không khớp trạng thái
+                if not final_results:
+                    st.warning(
+                        f"Tìm thấy {len(keyword_results)} khách hàng khớp từ khóa, "
+                        "nhưng không có khách hàng nào phù hợp với trạng thái đã chọn."
+                    )
+                else:
+                    st.markdown(f"#### Kết quả tìm kiếm: {len(final_results)} bản ghi")
+
+                    st.dataframe(
+                        customers_to_df(final_results),
+                        use_container_width=True,
+                        hide_index=True
+                    )
+
+                    chosen = st.selectbox(
+                        "Xem chi tiết kết quả",
+                        [
+                            f"{c['customer_id']} - {c['customer_name']}"
+                            for c in final_results
+                        ]
+                    )
+
+                    chosen_id = chosen.split(" - ")[0]
+                    render_customer_detail(
+                        find_customer_by_id(final_results, chosen_id) or final_results[0]
+                    )
 
 # ============================================================
 # 8. CHỨC NĂNG 4: XÓA THÔNG TIN KHÁCH HÀNG
