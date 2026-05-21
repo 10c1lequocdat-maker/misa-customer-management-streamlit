@@ -491,7 +491,7 @@ if menu == "Nhập thông tin khách hàng":
         st.markdown("Thông tin tài chính")
         c7, c8 = st.columns([1, 2])
         with c7:
-            balance = st.number_input("Công nợ (VND)*", value=0, step=100000)
+            balance = st.number_input("Công nợ/Số dư (VND)*", value=0, step=100000)
             st.text_input("Trạng thái tài chính", value=calculate_payment_status(float(balance)), disabled=True)
         with c8:
             notes = st.text_area("Ghi chú", max_chars=500)
@@ -600,7 +600,7 @@ elif menu == "Cập nhật thông tin khách hàng":
 
                 u7, u8 = st.columns([1, 2])
                 with u7:
-                    balance = st.number_input("Công nợ *", value=float(old.get("balance", 0) or 0), step=100000)
+                    balance = st.number_input("Công nợ / Số dư *", value=float(old.get("balance", 0) or 0), step=100000.0)
                     st.text_input("Trạng thái tài chính", value=calculate_payment_status(float(balance)), disabled=True)
                 with u8:
                     notes = st.text_area("Ghi chú", value=old.get("notes", ""), max_chars=500)
