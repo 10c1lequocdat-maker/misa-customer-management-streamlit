@@ -434,11 +434,11 @@ with st.sidebar:
     menu = st.radio(
         "Chọn chức năng",
         [
-            "1. Nhập thông tin khách hàng",
-            "2. Cập nhật thông tin khách hàng",
-            "3. Tìm kiếm thông tin khách hàng",
-            "4. Xóa thông tin khách hàng",
-            "5. Xem danh sách thông tin khách hàng",
+            "Nhập thông tin khách hàng",
+            "Cập nhật thông tin khách hàng",
+            "Tìm kiếm thông tin khách hàng",
+            "Xóa thông tin khách hàng",
+            "Xem danh sách thông tin khách hàng",
         ],
         label_visibility="collapsed",
     )
@@ -451,7 +451,7 @@ customers = st.session_state.customers
 # 5. CHỨC NĂNG 1: NHẬP THÔNG TIN KHÁCH HÀNG
 # ============================================================
 
-if menu == "1. Nhập thông tin khách hàng":
+if menu == "Nhập thông tin khách hàng":
     st.markdown('<div class="section-title">Nhập thông tin khách hàng</div>', unsafe_allow_html=True)
     st.markdown("<p class='misa-subtitle'>Hệ thống tự động sinh mã khách hàng và lưu hồ sơ vào file JSON.</p>", unsafe_allow_html=True)
 
@@ -476,7 +476,7 @@ if menu == "1. Nhập thông tin khách hàng":
             else:
                 st.caption("Cá nhân có thể bỏ trống Người đại diện và Mã số thuế.")
 
-        st.markdown("#### 2. Thông tin dịch vụ sử dụng")
+        st.markdown("Thông tin dịch vụ sử dụng")
         c4, c5, c6 = st.columns(3)
         with c4:
             product_service = st.selectbox("Sản phẩm cung cấp *", PRODUCTS)
@@ -488,7 +488,7 @@ if menu == "1. Nhập thông tin khách hàng":
             service_status_preview = calculate_service_status(expiry_date.strftime("%Y-%m-%d"))
             st.text_input("Trạng thái dịch vụ", value=service_status_preview, disabled=True)
 
-        st.markdown("#### 3. Thông tin tài chính")
+        st.markdown("Thông tin tài chính")
         c7, c8 = st.columns([1, 2])
         with c7:
             balance = st.number_input("Công nợ / Số dư *", value=0.0, step=100000.0)
@@ -496,7 +496,7 @@ if menu == "1. Nhập thông tin khách hàng":
         with c8:
             notes = st.text_area("Ghi chú", max_chars=500)
 
-        st.markdown("#### 4. Thông tin hệ thống")
+        st.markdown("Thông tin hệ thống")
         s1, s2, s3 = st.columns(3)
         with s1:
             st.text_input("created_at", value="Tự động khi lưu", disabled=True)
@@ -539,7 +539,7 @@ if menu == "1. Nhập thông tin khách hàng":
 # 6. CHỨC NĂNG 2: CẬP NHẬT THÔNG TIN KHÁCH HÀNG
 # ============================================================
 
-elif menu == "2. Cập nhật thông tin khách hàng":
+elif menu == "Cập nhật thông tin khách hàng":
     st.markdown('<div class="section-title">Cập nhật thông tin khách hàng</div>', unsafe_allow_html=True)
     active = active_customers(customers)
 
@@ -648,7 +648,7 @@ elif menu == "2. Cập nhật thông tin khách hàng":
 # 7. CHỨC NĂNG 3: TÌM KIẾM THÔNG TIN KHÁCH HÀNG
 # ============================================================
 
-elif menu == "3. Tìm kiếm thông tin khách hàng":
+elif menu == "Tìm kiếm thông tin khách hàng":
     st.markdown('<div class="section-title">Tìm kiếm thông tin khách hàng</div>', unsafe_allow_html=True)
 
     f1, f2, f3, f4 = st.columns([2, 1, 1, 1])
@@ -707,7 +707,7 @@ elif menu == "3. Tìm kiếm thông tin khách hàng":
 # 8. CHỨC NĂNG 4: XÓA THÔNG TIN KHÁCH HÀNG
 # ============================================================
 
-elif menu == "4. Xóa thông tin khách hàng":
+elif menu == "Xóa thông tin khách hàng":
     st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
     st.markdown("<div class='danger-note'>Hệ thống sử dụng xóa mềm: bản ghi không bị xóa vật lý, chỉ cập nhật is_deleted = True và ghi deleted_at.</div>", unsafe_allow_html=True)
 
@@ -744,7 +744,7 @@ elif menu == "4. Xóa thông tin khách hàng":
 # 9. CHỨC NĂNG 5: XEM DANH SÁCH THÔNG TIN KHÁCH HÀNG
 # ============================================================
 
-elif menu == "5. Xem danh sách thông tin khách hàng":
+elif menu == "Xem danh sách thông tin khách hàng":
     st.markdown('<div class="section-title">Xem danh sách thông tin khách hàng</div>', unsafe_allow_html=True)
 
     # Đọc lại file để đúng mô tả xem danh sách: tải dữ liệu từ customers.json
