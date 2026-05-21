@@ -701,7 +701,7 @@ elif menu == "Tìm kiếm thông tin khách hàng":
 
             # BƯỚC 2: Nếu từ khóa không tìm thấy thì báo luôn
             if not keyword_results:
-                st.info("Không tìm thấy khách hàng phù hợp với từ khóa đã nhập.")
+                st.info("Không tìm thấy khách hàng phù hợp.")
 
             else:
                 # BƯỚC 3: Sau khi đã tìm thấy theo từ khóa, mới lọc theo trạng thái
@@ -712,8 +712,7 @@ elif menu == "Tìm kiếm thông tin khách hàng":
                 # BƯỚC 4: Nếu có từ khóa nhưng không khớp trạng thái
                 if not final_results:
                     st.warning(
-                        f"Tìm thấy {len(keyword_results)} khách hàng khớp từ khóa, "
-                        "nhưng không có khách hàng nào phù hợp với trạng thái đã chọn."
+                        "Không tìm thấy khách hàng phù ."
                     )
                 else:
                     st.markdown(f"#### Kết quả tìm kiếm: {len(final_results)} bản ghi")
