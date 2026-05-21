@@ -741,35 +741,83 @@ elif menu == "Tìm kiếm thông tin khách hàng":
 # ============================================================
 
 elif menu == "Xóa thông tin khách hàng":
-    st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
-    active = active_customers(customers)
-    if not active:
-        st.warning("Không có khách hàng đang hoạt động để xóa.")
-    else:
-        selected = st.selectbox("Chọn khách hàng cần xóa", [f"{c['customer_id']} - {c['customer_name']}" for c in active])
-        selected_id = selected.split(" - ")[0]
-        target = find_customer_by_id(customers, selected_id)
+    st.markdown(
+        '<div class="section-title">Xóa thông tin khách hàng</div>',
+        unsafe_allow_html=True
+    )
 
-        if target:
-            render_customer_detail(target)
-            balance = float(target.get("balance", 0) or 0)
-            if balance != 0:
-                st.error(
-                    f"Không thể xóa hồ sơ. Khách hàng hiện đang có số dư/công nợ là {balance:,.0f} VND. "
-                    "Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa."
-                )
-            else:
-                confirm_delete = st.checkbox(f"Tôi chắc chắn muốn xóa khách hàng {target.get('customer_name', '')}")
-                if st.button("Xóa khách hàng", type="primary", disabled=not confirm_delete):
-                    for c in customers:
-                        if c.get("customer_id") == target.get("customer_id"):
-                            c["is_deleted"] = True
-                            c["deleted_at"] = now_str()
-                            c["updated_at"] = now_str()
-                            break
+    active_customers = [
+        enrich_customer(c)
+        for c in customers
+        if not c.get("is_deleted", False)
+    ]
+
+    if not active_customers:
+        st.info("Hiện chưa có khách hàng đang hoạt động để xóa.")
+    else:
+        selected_customer_text = st.selectbox(
+            "Chọn khách hàng cần xóa",
+            [
+                f"{c['customer_id']} - {c['customer_name']}"
+                for c in active_customers
+            ]
+        )
+
+        selected_customer_id = selected_customer_text.split(" - ")[0]
+        customer = find_customer_by_id(customers, selected_customer_id)
+
+        if customer:
+            customer_view = enrich_customer(customer)
+
+            st.markdown("### Thông tin khách hàng được chọn")
+            render_customer_detail(customer_view)
+
+            st.warning(
+                "Hệ thống sử dụng cơ chế xóa mềm. "
+                "Khi xóa, bản ghi sẽ được cập nhật `is_deleted = True` "
+                "và không còn hiển thị trong danh sách khách hàng đang hoạt động."
+            )
+
+            confirm_delete = st.checkbox(
+                "Tôi xác nhận muốn xóa khách hàng này"
+            )
+
+            if st.button("Xóa khách hàng", type="primary"):
+                service_status = customer_view.get("service_status", "")
+
+                # Điều kiện 1: Không cho xóa nếu khách hàng đang Active
+                if service_status in ["Active", "Đang hoạt động"]:
+                    st.error(
+                        "Không thể xóa khách hàng vì trạng thái dịch vụ hiện tại là Active/Đang hoạt động. "
+                        "Vui lòng cập nhật trạng thái dịch vụ sang Expired hoặc trạng thái không hoạt động trước khi xóa."
+                    )
+
+                # Điều kiện 2: Không cho xóa nếu còn công nợ
+                elif customer_view.get("balance", 0) != 0:
+                    st.error(
+                        f"Không thể xóa khách hàng vì còn công nợ: "
+                        f"{customer_view.get('balance', 0):,.0f} VND. "
+                        "Vui lòng xử lý công nợ về 0 trước khi xóa."
+                    )
+
+                # Điều kiện 3: Phải xác nhận trước khi xóa
+                elif not confirm_delete:
+                    st.error("Vui lòng tick xác nhận trước khi xóa khách hàng.")
+
+                # Nếu đủ điều kiện thì xóa mềm
+                else:
+                    customer["is_deleted"] = True
+                    customer["deleted_at"] = now_str()
+                    customer["updated_at"] = now_str()
+
                     save_customers(customers)
-                    st.session_state.customers = customers
-                    st.success("Đã xóa thành công và ẩn khách hàng khỏi danh sách hoạt động.")
+
+                    st.success(
+                        f"Đã xóa mềm khách hàng {customer['customer_id']} - "
+                        f"{customer['customer_name']} thành công."
+                    )
+
+                    st.rerun()
 
 # ============================================================
 # 9. CHỨC NĂNG 5: XEM DANH SÁCH THÔNG TIN KHÁCH HÀNG
