@@ -649,59 +649,78 @@ elif menu == "Cập nhật thông tin khách hàng":
 # ============================================================
 
 elif menu == "Tìm kiếm thông tin khách hàng":
-    st.markdown('<div class="section-title">Tìm kiếm thông tin khách hàng</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Tìm kiếm thông tin khách hàng</div>',
+        unsafe_allow_html=True
+    )
 
-    f1, f2, f3, f4 = st.columns([2, 1, 1, 1])
+    f1, f2, f3 = st.columns([2, 1, 1])
+
     with f1:
-        keyword = st.text_input("Từ khóa", placeholder="Nhập mã, tên, SĐT hoặc email")
+        keyword = st.text_input(
+            "Từ khóa",
+            placeholder="Nhập mã, tên, SĐT hoặc email"
+        )
+
     with f2:
-        search_type = st.selectbox("Tiêu chí", ["Tất cả", "Mã khách hàng", "Tên khách hàng", "Số điện thoại", "Email"])
-    with f3:
         status_filter = st.selectbox("Trạng thái", SERVICE_STATUS_ALL)
-    with f4:
+
+    with f3:
         include_deleted = st.checkbox("Bao gồm đã xóa")
 
     if st.button("Tìm kiếm", type="primary"):
         key = normalize_keyword(keyword)
+        phone_key = digits_only(keyword)
         results: List[Dict[str, Any]] = []
 
-        for c in customers:
-            c2 = enrich_customer(c)
+        if not key and not phone_key:
+            st.warning("Vui lòng nhập từ khóa tìm kiếm.")
+        else:
+            for c in customers:
+                c2 = enrich_customer(c)
 
-            if not include_deleted and c2.get("is_deleted"):
-                continue
-            if status_filter != "Tất cả" and c2.get("service_status") != status_filter:
-                continue
+                # Nếu không chọn "Bao gồm đã xóa" thì bỏ qua khách hàng đã xóa mềm
+                if not include_deleted and c2.get("is_deleted"):
+                    continue
 
-            if not key:
-                matched = True
-            elif search_type == "Mã khách hàng":
-                matched = c2.get("customer_id", "").upper() == keyword.strip().upper()
-            elif search_type == "Tên khách hàng":
-                matched = key in normalize_keyword(c2.get("customer_name", ""))
-            elif search_type == "Số điện thoại":
-                matched = digits_only(keyword) in digits_only(c2.get("phone", ""))
-            elif search_type == "Email":
-                matched = key in normalize_keyword(c2.get("email", ""))
-            else:
+                # Lọc theo trạng thái dịch vụ
+                if status_filter != "Tất cả" and c2.get("service_status") != status_filter:
+                    continue
+
+                # Tự động tìm trên mã KH, tên KH, email và số điện thoại
                 matched = (
                     key in normalize_keyword(c2.get("customer_id", ""))
                     or key in normalize_keyword(c2.get("customer_name", ""))
-                    or digits_only(keyword) in digits_only(c2.get("phone", ""))
                     or key in normalize_keyword(c2.get("email", ""))
+                    or (
+                        bool(phone_key)
+                        and phone_key in digits_only(c2.get("phone", ""))
+                    )
                 )
 
-            if matched:
-                results.append(c2)
+                if matched:
+                    results.append(c2)
 
-        st.markdown(f"#### Kết quả tìm kiếm: {len(results)} bản ghi")
-        if results:
-            st.dataframe(customers_to_df(results), use_container_width=True, hide_index=True)
-            chosen = st.selectbox("Xem chi tiết kết quả", [f"{c['customer_id']} - {c['customer_name']}" for c in results])
-            chosen_id = chosen.split(" - ")[0]
-            render_customer_detail(find_customer_by_id(results, chosen_id) or results[0])
-        else:
-            st.info("Không tìm thấy khách hàng phù hợp.")
+            st.markdown(f"#### Kết quả tìm kiếm: {len(results)} bản ghi")
+
+            if results:
+                st.dataframe(
+                    customers_to_df(results),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                chosen = st.selectbox(
+                    "Xem chi tiết kết quả",
+                    [f"{c['customer_id']} - {c['customer_name']}" for c in results]
+                )
+
+                chosen_id = chosen.split(" - ")[0]
+                render_customer_detail(
+                    find_customer_by_id(results, chosen_id) or results[0]
+                )
+            else:
+                st.info("Không tìm thấy khách hàng phù hợp.")
 
 # ============================================================
 # 8. CHỨC NĂNG 4: XÓA THÔNG TIN KHÁCH HÀNG
