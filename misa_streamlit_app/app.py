@@ -791,6 +791,6 @@ elif menu == "Xem danh sách thông tin khách hàng":
 
     st.markdown(
         "<div class='small-note'>Ghi chú: Chỉ hiển thị khách hàng chưa bị xóa mềm "
-        "(<b>is_deleted = False</b>). Các bản ghi đã xóa vẫn được giữ trong file customers.json để phục vụ kiểm toán hoặc khôi phục.</div>",
+        ". Các bản ghi đã xóa vẫn được giữ trong file customers.json để phục vụ kiểm toán hoặc khôi phục.</div>",
         unsafe_allow_html=True,
     )
