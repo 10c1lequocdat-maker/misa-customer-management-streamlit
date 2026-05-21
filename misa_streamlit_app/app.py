@@ -499,11 +499,11 @@ if menu == "Nhập thông tin khách hàng":
         st.markdown("Thông tin hệ thống")
         s1, s2, s3 = st.columns(3)
         with s1:
-            st.text_input("created_at", value="Tự động khi lưu", disabled=True)
+            st.text_input("Khởi tạo ngày:", value="Tự động khi lưu", disabled=True)
         with s2:
-            st.text_input("updated_at", value="Tự động khi lưu", disabled=True)
+            st.text_input("Cập nhật ngày:", value="Tự động khi lưu", disabled=True)
         with s3:
-            st.text_input("is_deleted", value="False", disabled=True)
+            st.text_input("Đã xóa ngày", value="False", disabled=True)
 
         submitted = st.form_submit_button("Lưu khách hàng", type="primary")
 
@@ -627,9 +627,9 @@ elif menu == "Cập nhật thông tin khách hàng":
                         expiry_date=expiry_date,
                         balance=float(balance),
                         notes=notes,
-                        created_at=old.get("created_at"),
-                        is_deleted=old.get("is_deleted", False),
-                        deleted_at=old.get("deleted_at"),
+                        created_at=old.get("Khởi tạo ngày"),
+                        is_deleted=old.get("Tình trạng xóa", False),
+                        deleted_at=old.get("Xóa ngày"),
                     )
                     errors = validate_customer(updated, customers, current_id=old.get("customer_id"))
                     if errors:
