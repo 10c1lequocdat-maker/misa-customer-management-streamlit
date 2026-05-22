@@ -8,10 +8,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 import streamlit as st
 
-# ============================================================
 #  WEB APP: QUẢN LÝ KHÁCH HÀNG MISA
-#  Một file app.py độc lập, lưu dữ liệu bằng data/customers.json
-# ============================================================
 
 DATA_DIR = Path("data")
 DATA_FILE = DATA_DIR / "customers.json"
@@ -26,10 +23,7 @@ st.set_page_config(
     page_icon="📘",
     layout="wide",
 )
-
-# ----------------------------
 # CSS giao diện
-# ----------------------------
 st.markdown(
     """
     <style>
@@ -98,11 +92,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-
-# ============================================================
 # 1. LƯU TRỮ DỮ LIỆU
-# ============================================================
-
 def ensure_data_file() -> None:
     DATA_DIR.mkdir(exist_ok=True)
     if not DATA_FILE.exists():
@@ -120,23 +110,17 @@ def load_customers() -> List[Dict[str, Any]]:
         st.error("File customers.json đang lỗi định dạng. Hệ thống tạm nạp danh sách rỗng.")
         return []
 
-
 def save_customers(customers: List[Dict[str, Any]]) -> None:
     ensure_data_file()
     DATA_FILE.write_text(json.dumps(customers, ensure_ascii=False, indent=4), encoding="utf-8")
 
-
-# ============================================================
 # 2. HÀM CHUẨN HÓA - KIỂM TRA DỮ LIỆU
-# ============================================================
 
 def now_str() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-
 def normalize_spaces(text: str) -> str:
     return re.sub(r"\s+", " ", str(text or "").strip())
-
 
 def remove_accents(text: str) -> str:
     text = str(text or "")
@@ -144,19 +128,15 @@ def remove_accents(text: str) -> str:
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     return text.replace("đ", "d").replace("Đ", "D")
 
-
 def normalize_keyword(text: str) -> str:
     return remove_accents(normalize_spaces(text)).lower()
-
 
 def digits_only(text: str) -> str:
     return re.sub(r"\D", "", str(text or ""))
 
-
 def parse_customer_no(customer_id: str) -> int:
     match = re.search(r"KH(\d+)$", str(customer_id or "").upper())
     return int(match.group(1)) if match else 0
-
 
 def generate_next_customer_id(customers: List[Dict[str, Any]]) -> str:
     """Sinh mã KH mới dựa trên mã lớn nhất trong toàn bộ file, kể cả bản ghi đã xóa."""
@@ -165,19 +145,16 @@ def generate_next_customer_id(customers: List[Dict[str, Any]]) -> str:
         max_no = max(max_no, parse_customer_no(c.get("customer_id", "")))
     return f"KH{max_no + 1:03d}"
 
-
 def email_is_valid(email: str) -> bool:
     if not email:
         return True
     return bool(re.match(r"^[\w\.-]+@[\w\.-]+\.[A-Za-z]{2,}$", email))
-
 
 def tax_code_is_valid(tax_code: str) -> bool:
     if not tax_code:
         return True
     tax_digits = digits_only(tax_code)
     return len(tax_digits) in (10, 13)
-
 
 def calculate_service_status(expiry_date: str) -> str:
     """Tính trạng thái thuê bao động dựa trên ngày hết hạn."""
@@ -193,7 +170,6 @@ def calculate_service_status(expiry_date: str) -> str:
         return "Sắp hết hạn"
     return "Active"
 
-
 def calculate_payment_status(balance: float) -> str:
     """Theo mô tả: 0 là đã thanh toán, >0 chưa thanh toán, <0 là đã thanh toán nhưng dư."""
     if balance == 0:
@@ -202,10 +178,8 @@ def calculate_payment_status(balance: float) -> str:
         return "Chưa thanh toán"
     return f"Đã thanh toán (Dư: {abs(balance):,.0f} VND)"
 
-
 def active_customers(customers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [c for c in customers if not c.get("is_deleted", False)]
-
 
 def enrich_customer(c: Dict[str, Any]) -> Dict[str, Any]:
     """Bổ sung trạng thái động để hiển thị."""
@@ -214,7 +188,6 @@ def enrich_customer(c: Dict[str, Any]) -> Dict[str, Any]:
     c["payment_status"] = calculate_payment_status(float(c.get("balance", 0) or 0))
     return c
 
-
 def validate_customer(
     customer: Dict[str, Any],
     customers: List[Dict[str, Any]],
@@ -222,7 +195,6 @@ def validate_customer(
 ) -> List[str]:
     errors: List[str] = []
 
-    # 10 trường bắt buộc theo mô tả
     required_fields = {
         "customer_id": "Mã khách hàng",
         "customer_name": "Tên khách hàng",
@@ -291,7 +263,6 @@ def validate_customer(
 
     return errors
 
-
 def build_customer_record(
     customer_id: str,
     customer_name: str,
@@ -350,7 +321,6 @@ def build_customer_record(
     }
     return record
 
-
 def customers_to_df(customers: List[Dict[str, Any]]) -> pd.DataFrame:
     rows = []
     for i, c in enumerate(customers, start=1):
@@ -373,14 +343,12 @@ def customers_to_df(customers: List[Dict[str, Any]]) -> pd.DataFrame:
         )
     return pd.DataFrame(rows)
 
-
 def find_customer_by_id(customers: List[Dict[str, Any]], customer_id: str) -> Optional[Dict[str, Any]]:
     customer_id = normalize_spaces(customer_id).upper()
     for c in customers:
         if c.get("customer_id") == customer_id:
             return c
     return None
-
 
 def render_customer_detail(c: Dict[str, Any]) -> None:
     c = enrich_customer(c)
@@ -409,10 +377,7 @@ def render_customer_detail(c: Dict[str, Any]) -> None:
         f"is_deleted: {c.get('is_deleted', False)} | deleted_at: {c.get('deleted_at') or '---'}"
     )
 
-
-# ============================================================
-# 3. KHỞI TẠO SESSION
-# ============================================================
+# 3.KHỞI TẠO SESSION 
 
 if "customers" not in st.session_state:
     st.session_state.customers = load_customers()
@@ -422,9 +387,7 @@ for item in st.session_state.customers:
     item["service_status"] = calculate_service_status(item.get("expiry_date", ""))
     item["payment_status"] = calculate_payment_status(float(item.get("balance", 0) or 0))
 
-# ============================================================
 # 4. GIAO DIỆN CHÍNH
-# ============================================================
 
 st.markdown('<div class="misa-header">QUẢN LÝ KHÁCH HÀNG MISA</div>', unsafe_allow_html=True)
 
@@ -447,9 +410,7 @@ with st.sidebar:
 
 customers = st.session_state.customers
 
-# ============================================================
 # 5. CHỨC NĂNG 1: NHẬP THÔNG TIN KHÁCH HÀNG
-# ============================================================
 
 if menu == "Nhập thông tin khách hàng":
     st.markdown('<div class="section-title">Nhập thông tin khách hàng</div>', unsafe_allow_html=True)
@@ -535,9 +496,8 @@ if menu == "Nhập thông tin khách hàng":
             st.success(f"Thêm bản ghi thành công! Mã khách hàng: {next_id}")
             st.info("Tải lại trang hoặc chuyển tab để hệ thống sinh mã khách hàng tiếp theo.")
 
-# ============================================================
+
 # 6. CHỨC NĂNG 2: CẬP NHẬT THÔNG TIN KHÁCH HÀNG
-# ============================================================
 
 elif menu == "Cập nhật thông tin khách hàng":
     st.markdown('<div class="section-title">Cập nhật thông tin khách hàng</div>', unsafe_allow_html=True)
@@ -644,9 +604,7 @@ elif menu == "Cập nhật thông tin khách hàng":
                         st.session_state.customers = customers
                         st.success("Cập nhật thành công! Trường updated_at đã được ghi nhận tự động.")
 
-# ============================================================
 # 7. CHỨC NĂNG 3: TÌM KIẾM THÔNG TIN KHÁCH HÀNG
-# ============================================================
 
 elif menu == "Tìm kiếm thông tin khách hàng":
     st.markdown(
@@ -736,9 +694,7 @@ elif menu == "Tìm kiếm thông tin khách hàng":
                         find_customer_by_id(final_results, chosen_id) or final_results[0]
                     )
 
-# ============================================================
 # 8. CHỨC NĂNG 4: XÓA THÔNG TIN KHÁCH HÀNG
-# ============================================================
 
 elif menu == "Xóa thông tin khách hàng":
     st.markdown('<div class="section-title">Xóa thông tin khách hàng</div>', unsafe_allow_html=True)
@@ -755,7 +711,7 @@ elif menu == "Xóa thông tin khách hàng":
             balance = float(target.get("balance", 0) or 0)
             if balance != 0:
                 st.error(
-                    f"Không thể xóa hồ sơ. Khách hàng hiện đang có số dư/công nợ là {balance:,.0f} VND. "
+                    f"Không thể xóa hồ sơ. Khách hàng hiện đang có công nợ là {balance:,.0f} VND. "
                     "Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa."
                 )
             else:
@@ -771,9 +727,7 @@ elif menu == "Xóa thông tin khách hàng":
                     st.session_state.customers = customers
                     st.success("Đã xóa thành công và ẩn khách hàng khỏi danh sách hoạt động.")
 
-# ============================================================
 # 9. CHỨC NĂNG 5: XEM DANH SÁCH THÔNG TIN KHÁCH HÀNG
-# ============================================================
 
 elif menu == "Xem danh sách thông tin khách hàng":
     st.markdown('<div class="section-title">Xem danh sách thông tin khách hàng</div>', unsafe_allow_html=True)
