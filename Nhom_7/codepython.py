@@ -14,10 +14,10 @@ DATA_FILE = DATA_DIR / 'customers.json'
 PRODUCTS = ['meInvoice', 'MISA SME', 'MISA AMIS', 'Bamboo']
 PACKAGES = ['Starter', 'Standard', 'Professional', 'Enterprise']
 CUSTOMER_TYPES = ['Cá nhân', 'Doanh nghiệp']
-SERVICE_STATUS_ALL = ['Tất cả', 'Active', 'Sắp hết hạn', 'Expired', 'Đã xóa']
+SERVICE_STATUS_ALL = ['Tất cả', 'Active', 'Sắp hết hạn', 'Expired', 'Trial', 'Đã xóa']
 
-# print('Đã nạp thư viện và cấu hình đường dẫn dữ liệu.')
-# print('File dữ liệu:', DATA_FILE)
+#print('Đã nạp thư viện và cấu hình đường dẫn dữ liệu.')
+#print('File dữ liệu:', DATA_FILE)
 
 # NHÓM HÀM LƯU TRỮ DỮ LIỆU
 
@@ -44,8 +44,6 @@ def save_customers(customers: List[Dict[str, Any]]) -> None:
 
 ensure_data_file()
 # print('Đã nạp nhóm hàm lưu trữ dữ liệu.')
-
-# 2. NHÓM HÀM CHUẨN HÓA - KIỂM TRA DỮ LIỆU
 
 def now_str() -> str:
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -120,6 +118,7 @@ def calculate_payment_status(balance: float) -> str:
 def active_customers(customers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [c for c in customers if not c.get('is_deleted', False)]
 
+
 def enrich_customer(c: Dict[str, Any]) -> Dict[str, Any]:
     c = dict(c)
     c['service_status'] = 'Đã xóa' if c.get('is_deleted') else calculate_service_status(c.get('expiry_date', ''))
@@ -128,7 +127,7 @@ def enrich_customer(c: Dict[str, Any]) -> Dict[str, Any]:
 
 # print('Đã nạp nhóm hàm chuẩn hóa và kiểm tra dữ liệu.')
 
-# 3. HÀM TẠO BẢN GHI VÀ KIỂM TRA TÍNH HỢP LỆ
+# HÀM TẠO BẢN GHI VÀ KIỂM TRA TÍNH HỢP LỆ
 
 def build_customer_record(
     customer_id: str,
@@ -190,6 +189,7 @@ def build_customer_record(
         'deleted_at': deleted_at,
     }
 
+
 def validate_customer(
     customer: Dict[str, Any],
     customers: List[Dict[str, Any]],
@@ -246,8 +246,6 @@ def validate_customer(
         expiry = datetime.strptime(customer.get('expiry_date', ''), '%Y-%m-%d').date()
         if expiry < start:
             errors.append('⚠️ Ngày hết hạn phải lớn hơn hoặc bằng ngày bắt đầu.')
-        if start < date.today() - timedelta(days=7):
-            errors.append('⚠️ Ngày bắt đầu không được lùi quá 07 ngày so với ngày hiện tại.')
     except Exception:
         errors.append('⚠️ Ngày bắt đầu hoặc ngày hết hạn không hợp lệ. Định dạng đúng: YYYY-MM-DD, ví dụ 2026-05-21.')
 
@@ -263,7 +261,6 @@ def validate_customer(
 
     return errors
 
-
 def print_validation_errors(errors: List[str]) -> None:
     if errors:
         print('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra các cảnh báo sau:')
@@ -272,7 +269,7 @@ def print_validation_errors(errors: List[str]) -> None:
 
 # print('Đã nạp hàm tạo bản ghi và kiểm tra tính hợp lệ.')
 
-# 4. NHÓM HÀM HIỂN THỊ DỮ LIỆU
+# NHÓM HÀM HIỂN THỊ DỮ LIỆU
 
 def customers_to_df(customers: List[Dict[str, Any]]) -> pd.DataFrame:
     rows = []
@@ -311,7 +308,6 @@ def show_table(customers: List[Dict[str, Any]]) -> None:
     else:
         display(df)
 
-
 def show_customer_detail(c: Dict[str, Any]) -> None:
     c = enrich_customer(c)
     detail = pd.DataFrame([
@@ -338,10 +334,9 @@ def show_customer_detail(c: Dict[str, Any]) -> None:
     ], columns=['Trường thông tin', 'Giá trị'])
     display(detail)
 
-
 # print('Đã nạp nhóm hàm hiển thị.')
 
-# CHỨC NĂNG 1: NHẬP THÔNG TIN KHÁCH HÀNG
+# NHẬP THÔNG TIN KHÁCH HÀNG
 
 def add_customer(
     customer_name: str,
@@ -386,9 +381,10 @@ def add_customer(
     customers.append(record)
     save_customers(customers)
     print(f'✅ Thêm bản ghi thành công! Mã khách hàng: {next_id}')
+    show_customer_detail(record)
     return True
 
-# CHỨC NĂNG 2: XÓA THÔNG TIN KHÁCH HÀNG
+# XÓA THÔNG TIN KHÁCH HÀNG
 
 def soft_delete_customer(customer_id: str) -> bool:
     customers = load_customers()
@@ -403,8 +399,8 @@ def soft_delete_customer(customer_id: str) -> bool:
 
     balance = float(target.get('balance', 0) or 0)
     if balance != 0:
-        print(f'⚠️ Không thể xóa. Khách hàng đang có số công nợ: {balance:,.0f} VND.')
-        print('Yêu cầu xử lý tất toán trước khi xóa.')
+        print(f'⚠️ Không thể xóa. Khách hàng đang có số dư/công nợ: {balance:,.0f} VND.')
+        print('Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa.')
         return False
 
     for c in customers:
@@ -418,7 +414,7 @@ def soft_delete_customer(customer_id: str) -> bool:
     print('✅ Đã xóa mềm khách hàng thành công.')
     return True
 
-# CHỨC NĂNG 3: CẬP NHẬT THÔNG TIN KHÁCH HÀNG
+# CẬP NHẬT THÔNG TIN KHÁCH HÀNG
 
 def update_customer(customer_id: str, **fields) -> bool:
     customers = load_customers()
@@ -480,7 +476,7 @@ def update_customer(customer_id: str, **fields) -> bool:
     show_customer_detail(updated_record)
     return True
 
-# CHỨC NĂNG 4: TÌM KIẾM THÔNG TIN KHÁCH HÀNG
+# TÌM KIẾM THÔNG TIN KHÁCH HÀNG
 
 def search_customers(
     keyword: str,
@@ -524,7 +520,7 @@ def search_customers(
 
     return final_results
 
-# CHỨC NĂNG 5: XEM DANH SÁCH KHÁCH HÀNG
+# XEM DANH SÁCH KHÁCH HÀNG
 
 def list_customers(
     keyword: str = '',
@@ -566,6 +562,7 @@ def input_date_required(label: str) -> date:
         except Exception:
             print('⚠️ Ngày không hợp lệ. Vui lòng nhập đúng định dạng YYYY-MM-DD.')
 
+
 def input_float_required(label: str, default: float = 0) -> float:
     while True:
         value = input(f'{label}: ').strip()
@@ -575,9 +572,10 @@ def input_float_required(label: str, default: float = 0) -> float:
             return float(value)
         except ValueError:
             print('⚠️ Giá trị phải là số. Vui lòng nhập lại.')
-            
+
+
 def print_menu():
-    print('\n' + '=' * 65)
+    print('\n' + '-' * 65)
     print('CHƯƠNG TRÌNH QUẢN LÝ KHÁCH HÀNG MISA')
     print('1. Nhập thông tin khách hàng')
     print('2. Xóa thông tin khách hàng')
@@ -585,7 +583,7 @@ def print_menu():
     print('4. Tìm kiếm thông tin khách hàng')
     print('5. Xem danh sách khách hàng')
     print('0. Thoát')
-    print('=' * 65)
+    print('-' * 65)
 
 
 def main_menu():
@@ -636,27 +634,95 @@ def main_menu():
 
         elif choice == '3':
             print('\nCẬP NHẬT THÔNG TIN KHÁCH HÀNG')
-            customer_id = input('Nhập mã khách hàng cần cập nhật, ví dụ KH001: ')
-            print('Các trường có thể cập nhật:')
-            print('customer_name, customer_type, phone, email, address, representative, tax_code,')
-            print('product_service, service_package, start_date, expiry_date, balance, notes')
-            field = input('Nhập tên trường cần cập nhật: ').strip()
-            value = input('Nhập giá trị mới: ').strip()
+            customer_id = input('Nhập mã khách hàng cần cập nhật, ví dụ KH001: ').strip()
 
-            if field in ['start_date', 'expiry_date']:
-                try:
-                    value = parse_date(value).strftime('%Y-%m-%d')
-                except Exception:
-                    print('⚠️ Ngày không hợp lệ. Định dạng đúng: YYYY-MM-DD.')
-                    continue
-            elif field == 'balance':
-                try:
-                    value = float(value)
-                except ValueError:
-                    print('⚠️ Công nợ phải là số.')
+            customers = load_customers()
+            old = find_customer_by_id(customers, customer_id)
+
+            if old is None:
+                print('⚠️ Không tìm thấy khách hàng cần cập nhật.')
+                continue
+            if old.get('is_deleted'):
+                print('⚠️ Không thể cập nhật khách hàng đã xóa.')
+                continue
+
+            print('\nTHÔNG TIN HIỆN TẠI CỦA KHÁCH HÀNG')
+            show_customer_detail(old)
+
+            field_labels = {
+                'customer_name': 'Tên khách hàng',
+                'customer_type': 'Loại khách hàng',
+                'phone': 'Số điện thoại',
+                'email': 'Email',
+                'address': 'Địa chỉ',
+                'representative': 'Người đại diện',
+                'tax_code': 'Mã số thuế',
+                'product_service': 'Sản phẩm cung cấp',
+                'service_package': 'Gói dịch vụ',
+                'start_date': 'Ngày bắt đầu',
+                'expiry_date': 'Ngày hết hạn',
+                'balance': 'Công nợ',
+                'notes': 'Ghi chú',
+            }
+
+            allowed_fields = list(field_labels.keys())
+            label_to_field = {normalize_keyword(label): field for field, label in field_labels.items()}
+
+            print('\nCác thông tin có thể cập nhật:')
+            for index, field in enumerate(allowed_fields, start=1):
+                print(f'{index}. {field_labels[field]}')
+
+            fields_to_update = {}
+
+            while True:
+                field_input = input('\nNhập số thứ tự hoặc tên thông tin cần cập nhật, nhấn Enter để kết thúc: ').strip()
+
+                if field_input == '':
+                    break
+
+                if field_input.isdigit() and 1 <= int(field_input) <= len(allowed_fields):
+                    field = allowed_fields[int(field_input) - 1]
+                else:
+                    field = label_to_field.get(normalize_keyword(field_input), field_input)
+
+                if field not in allowed_fields:
+                    print('⚠️ Thông tin cần cập nhật không hợp lệ. Vui lòng nhập đúng số thứ tự hoặc tên chức năng trong danh sách.')
                     continue
 
-            update_customer(customer_id, **{field: value})
+                label = field_labels[field]
+                print(f'Giá trị hiện tại của {label}: {old.get(field, "")}')
+                value = input(f'Nhập {label} mới: ').strip()
+
+                if field in ['start_date', 'expiry_date']:
+                    try:
+                        value = parse_date(value).strftime('%Y-%m-%d')
+                    except Exception:
+                        print('⚠️ Ngày không hợp lệ. Định dạng đúng: YYYY-MM-DD.')
+                        continue
+                elif field == 'balance':
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        print('⚠️ Công nợ phải là số.')
+                        continue
+
+                fields_to_update[field] = value
+                print(f'Đã ghi nhận thay đổi: {label} = {value}')
+
+            if not fields_to_update:
+                print('Bạn chưa nhập trường nào cần cập nhật. Không có thay đổi nào được lưu.')
+                continue
+
+            print('\nTHÔNG TIN THAY ĐỔI TRƯỚC KHI LƯU')
+            for key, value in fields_to_update.items():
+                label = field_labels.get(key, key)
+                print(f'- {label}: {old.get(key, "")} -> {value}')
+
+            confirm = input('Xác nhận lưu các thay đổi? [Y/N]: ').strip().lower()
+            if confirm == 'y':
+                update_customer(customer_id, **fields_to_update)
+            else:
+                print('Đã hủy thao tác cập nhật.')
 
         elif choice == '4':
             print('\nTÌM KIẾM THÔNG TIN KHÁCH HÀNG')
@@ -673,5 +739,4 @@ def main_menu():
 
         else:
             print('⚠️ Lựa chọn không hợp lệ. Vui lòng chọn lại.')
-
 main_menu()
