@@ -14,7 +14,7 @@ DATA_FILE = DATA_DIR / 'customers.json'
 PRODUCTS = ['meInvoice', 'MISA SME', 'MISA AMIS', 'Bamboo']
 PACKAGES = ['Starter', 'Standard', 'Professional', 'Enterprise']
 CUSTOMER_TYPES = ['Cá nhân', 'Doanh nghiệp']
-SERVICE_STATUS_ALL = ['Tất cả', 'Active', 'Sắp hết hạn', 'Expired', 'Trial', 'Đã xóa']
+SERVICE_STATUS_ALL = ['Tất cả', 'Active', 'Sắp hết hạn', 'Expired', 'Đã xóa']
 
 # print('Đã nạp thư viện và cấu hình đường dẫn dữ liệu.')
 # print('File dữ liệu:', DATA_FILE)
@@ -386,7 +386,6 @@ def add_customer(
     customers.append(record)
     save_customers(customers)
     print(f'✅ Thêm bản ghi thành công! Mã khách hàng: {next_id}')
-    show_customer_detail(record)
     return True
 
 # CHỨC NĂNG 2: XÓA THÔNG TIN KHÁCH HÀNG
@@ -404,8 +403,8 @@ def soft_delete_customer(customer_id: str) -> bool:
 
     balance = float(target.get('balance', 0) or 0)
     if balance != 0:
-        print(f'⚠️ Không thể xóa. Khách hàng đang có số dư/công nợ: {balance:,.0f} VND.')
-        print('Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa.')
+        print(f'⚠️ Không thể xóa. Khách hàng đang có số công nợ: {balance:,.0f} VND.')
+        print('Yêu cầu xử lý tất toán trước khi xóa.')
         return False
 
     for c in customers:
