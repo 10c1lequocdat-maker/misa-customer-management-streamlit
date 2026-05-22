@@ -27,7 +27,6 @@ def ensure_data_file() -> None:
     if not DATA_FILE.exists():
         DATA_FILE.write_text('[]', encoding='utf-8')
 
-
 def load_customers() -> List[Dict[str, Any]]:
     """Đọc danh sách khách hàng từ file JSON."""
     ensure_data_file()
@@ -42,7 +41,6 @@ def save_customers(customers: List[Dict[str, Any]]) -> None:
     """Ghi danh sách khách hàng vào file JSON."""
     ensure_data_file()
     DATA_FILE.write_text(json.dumps(customers, ensure_ascii=False, indent=4), encoding='utf-8')
-
 
 ensure_data_file()
 # print('Đã nạp nhóm hàm lưu trữ dữ liệu.')
@@ -192,7 +190,6 @@ def build_customer_record(
         'deleted_at': deleted_at,
     }
 
-
 def validate_customer(
     customer: Dict[str, Any],
     customers: List[Dict[str, Any]],
@@ -272,7 +269,6 @@ def print_validation_errors(errors: List[str]) -> None:
         print('Dữ liệu chưa hợp lệ. Vui lòng kiểm tra các cảnh báo sau:')
         for err in errors:
             print('-', err)
-
 
 # print('Đã nạp hàm tạo bản ghi và kiểm tra tính hợp lệ.')
 
@@ -558,7 +554,6 @@ def list_customers(
     show_table(result)
     return result
 
-
 # print('Đã nạp 5 chức năng chính theo yêu cầu.')
 
 # MENU CHƯƠNG TRÌNH CHÍNH
@@ -572,7 +567,6 @@ def input_date_required(label: str) -> date:
         except Exception:
             print('⚠️ Ngày không hợp lệ. Vui lòng nhập đúng định dạng YYYY-MM-DD.')
 
-
 def input_float_required(label: str, default: float = 0) -> float:
     while True:
         value = input(f'{label}: ').strip()
@@ -582,8 +576,7 @@ def input_float_required(label: str, default: float = 0) -> float:
             return float(value)
         except ValueError:
             print('⚠️ Giá trị phải là số. Vui lòng nhập lại.')
-
-
+            
 def print_menu():
     print('\n' + '=' * 65)
     print('CHƯƠNG TRÌNH QUẢN LÝ KHÁCH HÀNG MISA')
@@ -681,7 +674,5 @@ def main_menu():
 
         else:
             print('⚠️ Lựa chọn không hợp lệ. Vui lòng chọn lại.')
-
-
 
 main_menu()
