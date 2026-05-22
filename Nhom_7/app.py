@@ -243,8 +243,6 @@ def validate_customer(
         expiry = datetime.strptime(customer.get("expiry_date", ""), "%Y-%m-%d").date()
         if expiry < start:
             errors.append("Ngày hết hạn phải lớn hơn hoặc bằng ngày bắt đầu.")
-        if start < date.today() - timedelta(days=7):
-            errors.append("Ngày bắt đầu không được lùi quá 07 ngày so với ngày hiện tại.")
     except Exception:
         errors.append("Ngày bắt đầu hoặc ngày hết hạn không hợp lệ.")
 
@@ -451,7 +449,7 @@ if menu == "Nhập thông tin khách hàng":
         st.markdown("Thông tin tài chính")
         c7, c8 = st.columns([1, 2])
         with c7:
-            balance = st.number_input("Công nợ/Số dư (VND)*", value=0, step=100000)
+            balance = st.number_input("Công nợ (VND)*", value=0, step=100000)
             st.text_input("Trạng thái tài chính", value=calculate_payment_status(float(balance)), disabled=True)
         with c8:
             notes = st.text_area("Ghi chú", max_chars=500)
