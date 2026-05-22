@@ -171,12 +171,11 @@ def calculate_service_status(expiry_date: str) -> str:
     return "Active"
 
 def calculate_payment_status(balance: float) -> str:
-    """Theo mô tả: 0 là đã thanh toán, >0 chưa thanh toán, <0 là đã thanh toán nhưng dư."""
+    """Theo mô tả: 0 là đã thanh toán, >0 chưa thanh toán."""
     if balance == 0:
         return "Đã thanh toán"
     if balance > 0:
         return "Chưa thanh toán"
-    return f"Đã thanh toán (Dư: {abs(balance):,.0f} VND)"
 
 def active_customers(customers: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [c for c in customers if not c.get("is_deleted", False)]
