@@ -399,7 +399,7 @@ def soft_delete_customer(customer_id: str) -> bool:
 
     balance = float(target.get('balance', 0) or 0)
     if balance != 0:
-        print(f'⚠️ Không thể xóa. Khách hàng đang có số dư/công nợ: {balance:,.0f} VND.')
+        print(f'⚠️ Không thể xóa. Khách hàng đang có công nợ: {balance:,.0f} VND.')
         print('Yêu cầu xử lý tất toán hoặc bù trừ trước khi xóa.')
         return False
 
